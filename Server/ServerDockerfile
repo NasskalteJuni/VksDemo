@@ -1,0 +1,6 @@
+FROM node:alpine
+
+COPY ./server.js /app/server.js
+WORKDIR /app/
+CMD ["node", "server.js"]
+EXPOSE ${PORT}

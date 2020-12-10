@@ -1,0 +1,54 @@
+version: "3.8"
+
+services:
+  # some cache that caches data for the upstream server
+  # just imagine some standard nginx reverse proxy that also serves as a cache for static resources
+  cache:
+    build:
+      context: ./Cache
+      dockerfile: CacheDockerfile
+    environment:
+      # this cache caches for the server service, who is next in line (commonly referred to as 'upstream')
+      UPSTREAM: server
+      CACHE_TIME: 30
+    volumes:
+      - ${PWD}/logs/:/events/
+
+  # some server that serves files (which contain for demonstration purposes the time they were served by the server)
+  # in real world applications, this might be an apache2, tomcat, gunicorn or whatever you use to serve files through CGI/WSGI to your favourite language
+  server:
+    build:
+      context: ./Server
+      dockerfile: ServerDockerfile
+    volumes:
+      - ${PWD}/logs/:/events/
+
+  # a client that makes requests to the server through the cache. The client only knows the cache and not the upstream server(s) behind it
+  client:
+    build:
+      context: ./Client
+      dockerfile: ClientDockerfile
+    environment:
+      # our client only knows about the cache, which handles requests by serving cached responses or forwarding to server
+      SERVER: cache
+      CLIENT_CACHE_DURATION: 30
+    volumes:
+      - ${PWD}/logs/:/events/
+
+
+  # just here to visualize the output of client, cache, server and whatever other actors we have
+  # does this by serving a web page which shows what happens
+  visualizer:
+    build:
+      context: ./Visualizer
+      dockerfile: VisualizerDockerfile
+    ports:
+      - 8080:80
+    environment:
+      CLIENT: client
+      PORT: 80
+    volumes:
+      - ${PWD}/logs/:/events/
+
+volumes:
+  logs:

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Visualisierung des Ablaufs</title>
+</head>
+<body>
+<button id="start">Sende Request</button>
+<div id="log">
+
+</div>
+<script>
+    document.getElementById("start").addEventListener("click", () => fetch("/tell_client_to_send_request"));
+    const es = new EventSource("/events");
+    const log = document.getElementById("log");
+    es.addEventListener("log", e => {
+        const msg = JSON.parse(e.data);
+        log.innerText+=msg.who+": "+msg.what+"\n";
+    });
+    es.addEventListener("clear", () => log.innerText = "");
+    es.addEventListener("error", console.error);
+</script>
+</body>
+</html>
