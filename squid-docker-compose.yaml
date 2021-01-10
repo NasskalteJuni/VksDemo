@@ -10,16 +10,13 @@ x-utils:
     - ./utils/:/utils/
 
 services:
-  # some cache that caches data for the upstream server
-  # just imagine some standard nginx reverse proxy that also serves as a cache for static resources
+  # a squid cache that caches data for the upstream server
   cache:
     build:
-      context: ./Cache
-      dockerfile: CacheDockerfile
-    environment:
-      # this cache caches for the server service.
-      # it works a bit like a reverse proxy, forwarding requests for uncached requests to its "upstream"
-      UPSTREAM: server
+      context: ./Squid
+      dockerfile: SquidDockerfile
+    ports:
+      - 80:80
     <<: *utils
 
 

@@ -1,0 +1,8 @@
+FROM minimum2scp/squid:latest
+
+USER root
+COPY ./squid.local.conf /etc/squid/
+RUN mkdir /events/
+RUN chmod -R 777 /events/
+RUN touch /events/events.log
+RUN chmod 777 /events/events.log
