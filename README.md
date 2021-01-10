@@ -27,12 +27,13 @@ Drei Akteure leisten dabei die eigentliche Arbeit der Demo, nähmlich
 - Cache
 - Server
 
-Der Client möchte eine Resource, wie evtl. _test.html_ vom Server haben, 
-und als Server kennt er den Cache bzw. der Cache ist zwischen ihm und den Server.
-Der Cache leitet gecachtes zurück oder an den Server weiter, 
-welcher die Resource _test.html_ besitzt. 
-Alle drei schreiben hierbei logs in ein logfile, 
-welches durch die Magie von Docker (oder waren es File-mounts für Volumes?) zwischen allen dreien geteilt wird.
+Der Client möchte eine Resource, wie evtl. _test.html_ vom Server haben.
+Als Server kennt er nur den Cache, der Cache liegt zwischen ihm und den Server.
+Der Cache gibt gecachte Resourcen zurück oder leitet anfragen an den Server weiter, 
+welcher die Resourcen, also auch _test.html_, besitzt. 
+Alle drei schreiben hierbei logs in ein logfile, _/events/events.log_.
+Dieses Log-File wird zwischen allen dreien geteilt (Docker volumes machen es möglich).
+
 Um auch etwas von dem Ablauf des Requests mitzubekommen wird dieses File in von dem letzten Akteur beobachtet:
 
 - Visualizer
@@ -46,11 +47,7 @@ aber nun einmal notwendig, damit alle ggf. über http miteinander kommunizieren 
 und z.B. der Visualizer dem Client sagen kann, er solle doch bitte jetzt die Resource _test.html_ anfordern.
 
 In der _docker-compose.yaml_ kann man noch ein paar Einstellungen vornehmen, z.B. für wie lange Resourcen gecacht werden können.
+Es gibt zudem noch andere compose-Dateien, welche andere Konfigurationen mit anderen Caches oder Reverse Proxies zeigen.
 
 ## Offene Punkte
-Evtl. kann man noch Client-Caching einbinden, oder eine Funktion, die den (Server-)Cache mal eben leert, 
-damit man nicht warten muss, dass die Resource abläuft. 
-
-
-
-
+Evtl. noch CDN o.ä. demonstrieren?
