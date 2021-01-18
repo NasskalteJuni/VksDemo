@@ -3,19 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <title>Visualisierung des Ablaufs</title>
+    <link rel="stylesheet" type="text/css" href="./main.css">
 </head>
 <body>
-<button id="start">Sende Request</button>
-<div id="log">
+<main>
+    <button id="start" title="Starte beim Client einen Request an den Server">Sende Request</button>
+    <div id="log">
 
-</div>
+    </div>
+</main>
 <script>
     document.getElementById("start").addEventListener("click", () => fetch("/tell_client_to_send_request"));
     const es = new EventSource("/events");
     const log = document.getElementById("log");
     es.addEventListener("log", e => {
         const msg = JSON.parse(e.data);
-        log.innerText+=msg.who+": "+msg.what+"\n";
+        let id = e.lastEventId;
+        let service = msg.who;
+        let content = msg.what.replace(/</gi,"&lt;").replace(/</gi,"&lt;").replace(/\n/g,"<br>");
+        log.innerHTML+=`<div class="log-entry" id="${id}"><p class="service"><span>${service}</span></p><p class="content">${content}</p></div>`;
+        location.hash="#"+id;
     });
     es.addEventListener("clear", () => log.innerText = "");
     es.addEventListener("error", console.error);

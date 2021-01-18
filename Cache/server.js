@@ -1,6 +1,7 @@
 const http = require("http");
 const log = require("../utils/log.js")("cache");
 const httpGet = require("../utils/httpGet.js");
+const getCacheControlHeaders = require("../utils/getCacheControlHeaders.js");
 
 // write resources in a simple dictionary, with their URL as key and expires + actual response content as values
 const cache = {};
@@ -28,11 +29,12 @@ const server = http.createServer(async (req, res) => {
         if(new Date(cached.expires) > Date.now()){
             // send the resource to the client without bothering our upstream server
             await log(`serving request for ${resource} from cache.`);
-            res.writeHead(200, "OK", {
-                "cache-control": "expires: " + new Date(cached.expires).toUTCString(),
+            let headers = {
+                "expires": cached.expires.toUTCString(),
                 "content-type": cached.contentType,
-            });
-            return res.end(cached.data);
+            };
+            if(cached.etag) headers.etag = cached.etag;
+            return res.writeHead(200, "OK", headers).end(cached.data);
         }else{
             await log("resource was cached, but too old & expired. Delete from cache");
             // the resource is cached, but already expired. remove it from cache, carry on as if it wasn't in cache
@@ -43,19 +45,24 @@ const server = http.createServer(async (req, res) => {
     await log("cache miss, forward request to server");
 
     // if we got here, the resource was not in cache or the cache was stale. request the resource from the server
-    let upstreamResponse = await httpGet(`http://${UPSTREAM}${resource}`);
-
+    let upstreamResponse = await httpGet(`http://${UPSTREAM}${req.url}`, {headers: req.headers});
     await log(`received response from upstream server for ${resource}`);
 
     // if everything is ok
     if(upstreamResponse.ok){
-        await log(`adding resource ${resource} to cache...`);
-        // update our cache with whatever we received
-        cache[resource] = {
-            data: upstreamResponse.body,
-            contentType: upstreamResponse.headers["content-type"],
-            expires: ALWAYS_CACHE_FOR || upstreamResponse.headers["expires"] || new Date(Date.now() + (upstreamResponse.headers["cache-control"] && upstreamResponse.headers["cache-control"].indexOf("max-age") >= 0 ? +upstreamResponse.headers["cache-control"].replace(/(public, )?max-age /i, "") : 0))
-        };
+        let httpHeaderCacheInfo = getCacheControlHeaders(upstreamResponse);
+        if(httpHeaderCacheInfo.isAllowed){
+            await log(`adding resource ${resource} to cache...`);
+            // update our cache with whatever we received
+            cache[resource] = {
+                data: upstreamResponse.body,
+                contentType: upstreamResponse.headers["content-type"],
+                expires: ALWAYS_CACHE_FOR ? new Date(Date.now() + ALWAYS_CACHE_FOR) : httpHeaderCacheInfo.expires,
+                etag: httpHeaderCacheInfo.etag
+            };
+        }else{
+            await log(`not allowed to cache resource`);
+        }
     }
 
     // send / forward the fresh data to the client

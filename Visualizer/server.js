@@ -4,6 +4,9 @@ const port = process.env.PORT || 80;
 const uuid = () => Math.random().toString(32).substring(2,7);
 const logfile = "/events/events.log";
 
+
+// you are probably not interested in this file
+// it has nothing to do with caching and only serves to display what happens
 const server = http.createServer((req, res) => {
     if(req.url === "/events"){
         res.writeHead(200, "OK", {"content-type": "text/event-stream", "connection": "keep-alive"});
@@ -24,24 +27,22 @@ const server = http.createServer((req, res) => {
             }
         }, 1000);
     }else if(req.url === "/" || req.url === "/index.html"){
-        res.writeHead(200, "OK", {"content-type": "text/html"});
-        fs.createReadStream("/app/index.html").pipe(res, {end: true});
+        res.writeHead(200, "OK", {"content-type": "text/html"}).end(fs.readFileSync("/app/index.html", {encoding: "utf8"}));
     }else if(req.url === "/tell_client_to_send_request"){
         // basically: clear log file by removing it
         if(fs.existsSync(logfile)) fs.unlinkSync("/events/events.log");
         // tell client server to start the request
         http.get(`http://${process.env.CLIENT}/start_request`, response => {
             if(response.statusCode >= 200 && response.statusCode < 300){
-                res.writeHead(204, "OK");
-                res.end();
+                res.writeHead(204, "OK").end();
             }else{
-                res.writeHead(500, "INTERNAL SERVER ERROR");
-                res.end();
+                res.writeHead(500, "INTERNAL SERVER ERROR").end();
             }
         });
+    }else if(req.url === "/main.css"){
+        res.writeHead(200, "OK", {"content-type": "text/css"}).end(fs.readFileSync("/app/main.css",{encoding: "utf8"}))
     }else{
-        res.writeHead(404,"NOT FOUND");
-        res.end();
+        res.writeHead(404,"NOT FOUND").end();
     }
 });
 

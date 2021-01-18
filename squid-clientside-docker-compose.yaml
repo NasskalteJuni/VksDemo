@@ -1,0 +1,66 @@
+version: "3.8"
+
+# mount event logs and utilities (simple HTTP GET request functions and similar)
+# x-utils defines the utils extensions (everything starting with x- is a docker extension = you can use it for whatever you want)
+# the &utils is referenced by *utils down below and <<: means "import/paste this here"
+x-utils:
+  &utils
+  volumes:
+    - ./events/:/events/
+    - ./utils/:/utils/
+
+services:
+  # a squid cache that caches data for the upstream server
+  cache:
+    build:
+      context: ./Squid
+      dockerfile: SquidDockerfile
+      args:
+        # use the client sided web proxy
+        MODE: web_proxy
+    volumes:
+      # due to permission issues, squid needs its logs in the exactly in that directory
+      - ./events/:/var/log/squid/
+      - ./utils/:/utils/
+
+
+  # some server that serves files (which contain for demonstration purposes the time they were served by the server)
+  # in real world applications, this might be an apache2, tomcat, gunicorn or whatever you use to serve files through CGI/WSGI to your favourite language
+  server:
+    build:
+      context: ./Server
+      dockerfile: ServerDockerfile
+    environment:
+      # the server shall set HTTP headers
+      # which tell other services to cache this resource for the given amount of seconds
+      CACHE_LIFETIME: 30
+    <<: *utils
+
+  # a client that makes requests to the server through the cache. The client only knows the cache and not the upstream server(s) behind it
+  client:
+    build:
+      context: ./Client
+      dockerfile: ClientDockerfile
+    environment:
+      # in this scenario, the client knows the server and has the proxy configured locally
+      SERVER: server
+      # is our client caching resources or is he always requesting them from the server? (1 for true, 0 for false)
+      IS_CLIENT_CACHE_ENABLED: 0
+      RESOURCE: test.html
+      http_proxy: cache
+    <<: *utils
+
+
+  # just here to visualize the output of client, cache, server and whatever other actors we have
+  # does this by serving a web page which shows what happens
+  visualizer:
+    build:
+      context: ./Visualizer
+      dockerfile: VisualizerDockerfile
+    ports:
+      - 8080:80
+    environment:
+      CLIENT: client
+      PORT: 80
+    <<: *utils
+

@@ -15,7 +15,7 @@ function getLogFor(service){
      * @returns {Promise} resolves when done logging
      * */
     async function log(...values){
-        values = values.join(" ");
+        values = values.join("\n");
         console.log(values);
         let logMessage = JSON.stringify({who: service, what: values, when: Date.now()})+"\n";
         fs.appendFileSync("/events/events.log",logMessage, {encoding: "utf-8"});

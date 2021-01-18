@@ -4,12 +4,12 @@ const http = require("http");
 * make a simple http request,
 * get the response with common fields like 'body' or 'ok' (shorthand to check the status code to be 200 or more but less than 300)
 * @function httpGet
-* @param {String} url the url to request (must be http and not https)
+* @param {...String|Object} urlAndSettings the url to request (must be http and not https)
 * @returns {Promise<Response>} resolves with the returned response object
 * */
-function httpGet(url){
+function httpGet(...urlAndSettings){
     return new Promise((resolve, reject) => {
-        http.get(url, response => {
+        http.get(...urlAndSettings, response => {
             // buffer the data we receive
             let data = "";
             response.on("data", d => data += d);

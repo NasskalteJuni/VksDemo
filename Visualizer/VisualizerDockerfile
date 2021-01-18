@@ -3,4 +3,5 @@ FROM node:alpine
 WORKDIR /app/
 COPY ./server.js ./server.js
 COPY ./index.html ./index.html
+COPY ./main.css ./main.css
 CMD ["node", "server.js"]

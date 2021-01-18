@@ -33,6 +33,9 @@ services:
       # the server shall set HTTP headers
       # which tell other services to cache this resource for the given amount of seconds
       CACHE_LIFETIME: 30
+      USE_ETAG: 1
+      # USE_MAX_AGE: 1
+      # ALLOW_ONLY_CLIENT_CACHING: 1
     <<: *utils
 
   # a client that makes requests to the server through the cache. The client only knows the cache and not the upstream server(s) behind it
