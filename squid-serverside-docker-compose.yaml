@@ -15,9 +15,17 @@ services:
     build:
       context: ./Squid
       dockerfile: SquidDockerfile
+      args:
+        MODE: reverse_proxy
     ports:
       - 80:80
-    <<: *utils
+    volumes:
+      # due to permission issues, squid needs its logs in the exactly in that directory
+      - ./events/:/var/log/squid/
+      - ./utils/:/utils/
+    environment:
+      # run in reverse proxy mode
+      MODE: reverse_proxy
 
 
   # some server that serves files (which contain for demonstration purposes the time they were served by the server)
